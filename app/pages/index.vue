@@ -4,9 +4,7 @@ import { usePayment } from "~/composables/usePayment";
 
 /* ========== PRODUCT STATE ========== */
 const baseSize = ref(31);
-const sizes = computed(() =>
-  Array.from({ length: 5 }, (_, i) => baseSize.value + i)
-);
+const sizes = computed(() => Array.from({ length: 5 }, (_, i) => baseSize.value + i));
 const selected = ref(baseSize.value);
 function selectSize(value) {
   selected.value = value;
@@ -60,9 +58,7 @@ function handleCloseModal() {
   <section class="section">
     <div class="container">
       <div class="title">
-        <h1 class="title is-4 mb-2">
-          Giày New Balance 530 Natural Indigo (GS) GR530SB1
-        </h1>
+        <h1 class="title is-4 mb-2">Giày New Balance 530 Natural Indigo (GS) GR530SB1</h1>
       </div>
 
       <div class="columns is-variable is-8">
@@ -90,11 +86,7 @@ function handleCloseModal() {
     </div>
 
     <!-- Modal QR -->
-    <QRCodeModal
-      :show="showQrModal"
-      :qr-image="qrImage"
-      @close="handleCloseModal"
-    />
+    <QRCodeModal :show="showQrModal" :qr-image="qrImage" @close="handleCloseModal" />
   </section>
 </template>
 
