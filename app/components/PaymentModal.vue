@@ -339,7 +339,7 @@ const formattedCountdown = computed(() => {
 .payment-modal .modal-card-head {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.5rem;
   border-bottom: none;
   display: flex;
   justify-content: space-between;
@@ -559,8 +559,7 @@ const formattedCountdown = computed(() => {
 }
 
 .product-item:hover {
-  background: #e9ecef;
-  transform: translateX(4px);
+  background: #444444;
 }
 
 .product-info {
@@ -742,6 +741,7 @@ const formattedCountdown = computed(() => {
   flex-direction: column;
   gap: 0.75rem;
   flex: auto;
+  flex-direction: column;
 }
 
 .products-list.compact {
@@ -759,6 +759,7 @@ const formattedCountdown = computed(() => {
   background: #f8f9fa;
   border-radius: 10px;
   transition: background 0.3s ease;
+  overflow-y: auto;
 }
 
 .product-item.compact:hover {
@@ -1204,6 +1205,6 @@ const formattedCountdown = computed(() => {
 }
 
 .brand {
-  margin-right: 1.5rem;
+  margin-right: 1rem;
 }
 </style>

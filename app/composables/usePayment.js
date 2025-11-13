@@ -8,7 +8,7 @@ export function usePayment() {
     code: "",
     end_user_id: "",
     end_user_name: "MPhuong",
-    end_user_addr: "Hà Nội, Việt Nam",
+    end_user_addr: "Vĩnh Tuy, Hai Bà Trưng, Hà Nội, Việt Nam",
     merchant: 3,
     customer: 3,
     service_package: 1,
