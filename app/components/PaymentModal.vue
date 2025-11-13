@@ -220,7 +220,7 @@ const formattedCountdown = computed(() => {
       </header>
 
       <section class="modal-card-body">
-        <div class="brand-bar">
+        <div v-if="currentView === 'qr-view'" class="brand-bar">
           <div class="brand-left"></div>
           <div class="brand-right">
             <div class="countdown-badge">
@@ -608,8 +608,10 @@ const formattedCountdown = computed(() => {
               <div class="info-box qr-info-box">
                 <div class="info-header">
                   <h3 class="title is-5">
-                    <span class="title-icon">💳</span>
-                    Thông tin thanh toán
+                    <span class="title-icon" style="margin-bottom: 0.55rem"
+                      >💳</span
+                    >
+                    <span class="title-text">Thông tin thanh toán</span>
                   </h3>
                 </div>
                 <div class="info-list">
@@ -680,21 +682,6 @@ const formattedCountdown = computed(() => {
                   :class="{ 'is-loading': isCancelling }"
                   :disabled="isCancelling"
                 >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M18 6L6 18M6 6L18 18"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
                   Hủy thanh toán
                 </button>
               </div>
