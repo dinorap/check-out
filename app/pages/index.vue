@@ -49,15 +49,13 @@ const {
   isCreating,
   isCancelling,
   countdown,
-  openPaymentModal,
   closePaymentModal,
   cancelPayment,
-  payWithQr,
+  startPaymentWithQr,
 } = usePayment();
 
 async function handleOpenPayment() {
-  openPaymentModal();
-  await payWithQr();
+  await startPaymentWithQr();
 }
 
 function handleClosePayment() {

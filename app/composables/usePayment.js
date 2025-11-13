@@ -262,8 +262,9 @@ export function usePayment() {
   }
 
   async function getQRCode() {
-    if (isQrLoading.value) return;
+    if (isQrLoading.value) return false;
     isQrLoading.value = true;
+    let success = false;
 
     try {
       const payload = {
@@ -285,6 +286,7 @@ export function usePayment() {
       if (res?.vietQRImage) {
         qrImage.value = `data:image/png;base64,${res.vietQRImage}`;
         startPolling(newBill.value.end_user_id);
+        success = true;
       } else {
         alert("API không trả về QR. Thử lại sau.");
       }
@@ -293,6 +295,8 @@ export function usePayment() {
     } finally {
       isQrLoading.value = false;
     }
+
+    return success;
   }
 
   function openPaymentModal() {
@@ -309,16 +313,47 @@ export function usePayment() {
     qrImage.value = null;
   }
 
-  async function payWithQr() {
-    if (isCreating.value || isQrLoading.value) return;
+  async function payWithQr(options = {}) {
+    const { autoStartCountdown = true } = options;
+
+    if (isCreating.value || isQrLoading.value) return false;
 
     if (!hasCreatedBill.value) {
       const created = await createBill();
-      if (!created) return;
+      if (!created) return false;
     }
 
-    await getQRCode();
+    const generated = await getQRCode();
+    if (!generated) return false;
+
+    if (autoStartCountdown) {
+      startCountdown();
+    }
+
+    return true;
+  }
+
+  async function startPaymentWithQr() {
+    if (isCreating.value || isQrLoading.value) return false;
+
+    stopPolling();
+    stopCountdown();
+    hasCreatedBill.value = false;
+    lastBillGroup.value = null;
+    createdDetails.value = [];
+    regenerateIdentifiers();
+    resetLocalBill(1);
+    qrImage.value = null;
+    resetCountdown();
+
+    const success = await payWithQr({ autoStartCountdown: false });
+    if (!success) {
+      return false;
+    }
+
+    showPaymentModal.value = true;
     startCountdown();
+    return true;
   }
 
   async function updateRemoteStatus(status) {
@@ -379,6 +414,7 @@ export function usePayment() {
     closePaymentModal,
     cancelPayment,
     payWithQr,
+    startPaymentWithQr,
     createBill,
     getQRCode,
   };
