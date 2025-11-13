@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from "vue";
+import { computed } from "vue";
 
 const props = defineProps({
   show: {
@@ -36,56 +36,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits([
-  "close",
-  "pay-with-qr",
-  "select-payment-method",
-  "cancel",
-]);
-
-// View states: 'order-summary', 'qr-view'
-const currentView = ref("order-summary");
-
-// Reset view when modal closes
-watch(
-  () => props.show,
-  (newVal) => {
-    if (!newVal) {
-      currentView.value = "order-summary";
-    }
-  }
-);
-
-// Watch qrImage to switch to qr-view when QR is loaded
-watch(
-  () => props.qrImage,
-  (newVal) => {
-    if (newVal) {
-      currentView.value = "qr-view";
-    }
-  }
-);
-
-function handleSelectPaymentMethod(method) {
-  if (method === "qr") {
-    // Nếu đã có QR image, chuyển view về qr-view luôn
-    if (props.qrImage) {
-      currentView.value = "qr-view";
-    } else {
-      // Nếu chưa có QR, emit event để tạo QR mới
-      emit("select-payment-method", "qr");
-    }
-  } else {
-    // Handle other payment methods
-    console.log("Selected payment method:", method);
-  }
-}
-
-function handleBack() {
-  if (currentView.value === "qr-view") {
-    currentView.value = "order-summary";
-  }
-}
+const emit = defineEmits(["close", "cancel"]);
 
 const totalAmount = computed(() =>
   (props.newDetailList || []).reduce(
@@ -183,34 +134,36 @@ const formattedCountdown = computed(() => {
               <path d="M16 16H18V18H16V16Z" fill="currentColor" />
             </svg>
           </div>
-          <p class="modal-card-title">
-            <span v-if="currentView === 'order-summary'"
-              >Chọn phương thức thanh toán</span
-            >
-            <span v-else>Quét mã QR để thanh toán</span>
-          </p>
-          <button
-            v-if="currentView === 'qr-view'"
-            class="back-button"
-            @click="handleBack"
-            aria-label="back"
-          >
+          <p class="modal-card-title">Quét mã QR để thanh toán</p>
+        </div>
+
+        <div class="brand" v-if="countdown > 0">
+          <div class="countdown-badge">
             <svg
-              width="20"
-              height="20"
+              width="16"
+              height="16"
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="2"
+              />
               <path
-                d="M19 12H5M5 12L12 19M5 12L12 5"
+                d="M12 6V12L16 14"
                 stroke="currentColor"
                 stroke-width="2"
                 stroke-linecap="round"
-                stroke-linejoin="round"
               />
             </svg>
-          </button>
+            <span
+              >Hết hạn sau <strong>{{ formattedCountdown }}</strong></span
+            >
+          </div>
         </div>
         <button
           class="delete"
@@ -220,38 +173,6 @@ const formattedCountdown = computed(() => {
       </header>
 
       <section class="modal-card-body">
-        <div v-if="currentView === 'qr-view'" class="brand-bar">
-          <div class="brand-left"></div>
-          <div class="brand-right">
-            <div class="countdown-badge">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="2"
-                />
-                <path
-                  d="M12 6V12L16 14"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                />
-              </svg>
-              <span
-                >Hết hạn sau <strong>{{ formattedCountdown }}</strong></span
-              >
-            </div>
-          </div>
-        </div>
-
         <article class="message is-warning notification-box">
           <div class="message-body">
             <div class="notification-icon">⚠️</div>
@@ -267,129 +188,59 @@ const formattedCountdown = computed(() => {
           </div>
         </article>
 
-        <template v-if="currentView === 'order-summary'">
-          <div class="order-summary">
-            <div class="summary-header">
-              <h3 class="title is-5">
-                <span class="title-icon">📋</span>
-                Thông tin đơn hàng
-              </h3>
-            </div>
-            <div class="info-box">
-              <div class="info-item">
-                <span class="info-label">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M20 7L9 18L4 13"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  Mã đơn hàng
-                </span>
-                <strong class="info-value code-value">{{
-                  newBill.code
-                }}</strong>
+        <div class="qr-payment-layout">
+          <div class="qr-info-column">
+            <div class="info-box qr-info-box">
+              <div class="info-header">
+                <h3 class="title is-6">
+                  <span class="title-icon">📋</span>
+                  Thông tin thanh toán
+                </h3>
               </div>
-              <div class="info-item">
-                <span class="info-label">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <circle
-                      cx="12"
-                      cy="7"
-                      r="4"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    />
-                  </svg>
-                  Khách hàng
-                </span>
-                <strong class="info-value">{{ newBill.end_user_name }}</strong>
-              </div>
-              <div class="info-item">
-                <span class="info-label">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M10 13C10.4295 13.5741 10.9774 14.0491 11.6066 14.3929C12.2357 14.7367 12.9315 14.9411 13.6467 14.9923C14.3618 15.0435 15.0796 14.9403 15.7513 14.6897C16.4231 14.4392 17.0331 14.047 17.54 13.54L20.54 10.54C21.4508 9.59695 21.9548 8.33394 21.9434 7.02296C21.932 5.71198 21.4061 4.45791 20.4791 3.53087C19.5521 2.60383 18.298 2.07799 16.987 2.0666C15.676 2.0552 14.413 2.55918 13.47 3.46997L11.75 5.17997"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                    <path
-                      d="M14 11C13.5705 10.4259 13.0226 9.95085 12.3934 9.60707C11.7643 9.26329 11.0685 9.05886 10.3533 9.00766C9.63816 8.95645 8.92037 9.05972 8.24863 9.31028C7.57689 9.56084 6.96688 9.95301 6.46 10.46L3.46 13.46C2.54921 14.403 2.04523 15.666 2.05662 16.977C2.06802 18.288 2.59386 19.5421 3.5209 20.4691C4.44794 21.3962 5.70201 21.922 7.01299 21.9334C8.32397 21.9448 9.58698 21.4408 10.53 20.53L12.24 18.82"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  Mã khách hàng
-                </span>
-                <strong class="info-value">{{ newBill.end_user_id }}</strong>
-              </div>
-              <div class="info-item">
-                <span class="info-label">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    />
-                    <circle
-                      cx="12"
-                      cy="10"
-                      r="3"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    />
-                  </svg>
-                  Địa chỉ
-                </span>
-                <span class="info-value">{{ newBill.end_user_addr }}</span>
+              <div class="info-list">
+                <div class="info-row highlight">
+                  <span class="info-label">Số tiền thanh toán</span>
+                  <strong class="info-value amount-highlight">
+                    {{ formatCurrency(totalAmount) }}
+                  </strong>
+                </div>
+
+                <div class="info-row">
+                  <span class="info-label">Mã đơn hàng</span>
+                  <strong class="info-value code-value">{{
+                    newBill.code
+                  }}</strong>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Khách hàng</span>
+                  <strong class="info-value">{{
+                    newBill.end_user_name
+                  }}</strong>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Mã khách hàng</span>
+                  <strong class="info-value">{{ newBill.end_user_id }}</strong>
+                </div>
+
+                <div class="info-row address-row">
+                  <span class="info-label">Địa chỉ</span>
+                  <span class="info-value">{{ newBill.end_user_addr }}</span>
+                </div>
               </div>
             </div>
 
-            <div class="products-section">
-              <h4 class="products-title">Sản phẩm</h4>
-              <div class="products-list">
+            <div class="info-box products-box">
+              <div class="info-header">
+                <h3 class="title is-6">
+                  <span class="title-icon">🛍️</span>
+                  Sản phẩm
+                </h3>
+              </div>
+              <div class="products-list compact">
                 <div
                   v-for="(item, index) in newDetailList"
                   :key="index"
-                  class="product-item"
+                  class="product-item compact"
                 >
                   <div class="product-info">
                     <div class="product-name">{{ item.item_name }}</div>
@@ -401,293 +252,58 @@ const formattedCountdown = computed(() => {
                 </div>
               </div>
             </div>
-
-            <div class="total-section">
-              <div class="total-row">
-                <span class="total-label">Tổng thanh toán</span>
-                <span class="total-amount">
-                  {{ formatCurrency(totalAmount) }}
-                </span>
-              </div>
-            </div>
           </div>
 
-          <div class="payment-methods">
-            <h3 class="payment-methods-title">Chọn phương thức thanh toán</h3>
-
-            <div class="payment-method-list">
-              <!-- QR Code Payment -->
-              <div
-                class="payment-method-item"
-                @click="handleSelectPaymentMethod('qr')"
-              >
-                <div class="method-content">
-                  <div class="method-info">
-                    <div class="method-name">
-                      App Ngân hàng và Ví điện tử
-                      <span class="method-badge">(BIDVQR)</span>
-                    </div>
-                  </div>
-                  <div class="method-icon qr-icon">
-                    <svg
-                      width="48"
-                      height="48"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <rect
-                        x="3"
-                        y="3"
-                        width="5"
-                        height="5"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      />
-                      <rect
-                        x="16"
-                        y="3"
-                        width="5"
-                        height="5"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      />
-                      <rect
-                        x="3"
-                        y="16"
-                        width="5"
-                        height="5"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      />
-                      <path d="M11 3H13V11H11V3Z" fill="currentColor" />
-                      <path d="M11 13H13V21H11V13Z" fill="currentColor" />
-                      <path d="M3 11H11V13H3V11Z" fill="currentColor" />
-                      <path d="M13 11H21V13H13V11Z" fill="currentColor" />
-                      <path d="M16 16H18V18H16V16Z" fill="currentColor" />
-                    </svg>
-                    <div class="qr-label">Scan to Pay</div>
-                  </div>
+          <div class="qr-column">
+            <div class="qr-box">
+              <div class="qr-header">
+                <h3 class="title is-5">
+                  <span class="title-icon">📱</span>
+                  Quét mã QR
+                </h3>
+                <p class="qr-subtitle">
+                  Sử dụng ứng dụng ngân hàng hoặc ví điện tử để quét mã
+                </p>
+              </div>
+              <div class="qr-container">
+                <div v-if="qrImage" class="qr-frame">
+                  <figure class="image qr-image">
+                    <img :src="qrImage" alt="QR Code" />
+                  </figure>
+                  <div class="qr-scan-line"></div>
+                </div>
+                <div v-else class="qr-placeholder">
+                  <div class="loader"></div>
+                  <span class="placeholder-text">
+                    {{ isQrLoading ? "Đang tạo mã QR..." : "Chưa có mã QR" }}
+                  </span>
                 </div>
               </div>
-
-              <!-- Domestic Card -->
-              <div
-                class="payment-method-item"
-                @click="handleSelectPaymentMethod('domestic')"
-              >
-                <div class="method-content">
-                  <div class="method-info">
-                    <div class="method-name">
-                      Thẻ nội địa và tài khoản ngân hàng
-                    </div>
-                  </div>
-                  <div class="method-icon bank-icon">
-                    <svg
-                      width="48"
-                      height="48"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M3 21H21"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                      />
-                      <path
-                        d="M3 10H21"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                      />
-                      <path
-                        d="M5 6L12 2L19 6"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                      <path
-                        d="M5 21V10"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                      />
-                      <path
-                        d="M19 21V10"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                      />
-                      <path
-                        d="M9 10V21"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                      />
-                      <path
-                        d="M15 10V21"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                      />
-                    </svg>
-                  </div>
+              <div class="qr-instructions">
+                <div class="instruction-item">
+                  <span class="instruction-number">1</span>
+                  <span>Mở ứng dụng ngân hàng hoặc ví điện tử</span>
+                </div>
+                <div class="instruction-item">
+                  <span class="instruction-number">2</span>
+                  <span>Quét mã QR trên màn hình</span>
+                </div>
+                <div class="instruction-item">
+                  <span class="instruction-number">3</span>
+                  <span>Xác nhận thanh toán trong ứng dụng</span>
                 </div>
               </div>
-
-              <!-- International Card -->
-              <div
-                class="payment-method-item"
-                @click="handleSelectPaymentMethod('international')"
+              <button
+                class="button cancel-button"
+                @click="emit('cancel')"
+                :class="{ 'is-loading': isCancelling }"
+                :disabled="isCancelling"
               >
-                <div class="method-content">
-                  <div class="method-info">
-                    <div class="method-name">Thẻ thanh toán quốc tế</div>
-                    <div class="card-brands">
-                      <span class="card-brand visa">VISA</span>
-                      <span class="card-brand mastercard">Mastercard</span>
-                      <span class="card-brand jcb">JCB</span>
-                      <span class="card-brand unionpay">UnionPay</span>
-                      <span class="card-brand amex">Amex</span>
-                    </div>
-                  </div>
-                  <div class="method-icon card-icon">
-                    <svg
-                      width="48"
-                      height="48"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <rect
-                        x="2"
-                        y="6"
-                        width="20"
-                        height="12"
-                        rx="2"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      />
-                      <path
-                        d="M2 10H22"
-                        stroke="currentColor"
-                        stroke-width="2"
-                      />
-                      <rect
-                        x="4"
-                        y="12"
-                        width="4"
-                        height="2"
-                        rx="1"
-                        fill="currentColor"
-                      />
-                      <rect
-                        x="4"
-                        y="15"
-                        width="6"
-                        height="2"
-                        rx="1"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <!-- VNPAY App -->
+                Hủy thanh toán
+              </button>
             </div>
           </div>
-        </template>
-
-        <template v-if="currentView === 'qr-view'">
-          <div class="qr-payment-layout">
-            <div class="qr-info-column">
-              <div class="info-box qr-info-box">
-                <div class="info-header">
-                  <h3 class="title is-5">
-                    <span class="title-icon" style="margin-bottom: 0.55rem"
-                      >💳</span
-                    >
-                    <span class="title-text">Thông tin thanh toán</span>
-                  </h3>
-                </div>
-                <div class="info-list">
-                  <div class="info-row highlight">
-                    <span class="info-label">Số tiền thanh toán</span>
-                    <strong class="info-value amount-highlight">
-                      {{ formatCurrency(totalAmount) }}
-                    </strong>
-                  </div>
-                  <div class="info-row">
-                    <span class="info-label">Giá trị đơn hàng</span>
-                    <strong class="info-value">{{
-                      formatCurrency(totalAmount)
-                    }}</strong>
-                  </div>
-                  <div class="info-row">
-                    <span class="info-label">Phí giao dịch</span>
-                    <strong class="info-value free">Miễn phí</strong>
-                  </div>
-                  <div class="info-row">
-                    <span class="info-label">Mã đơn hàng</span>
-                    <strong class="info-value">{{ newBill.code }}</strong>
-                  </div>
-                  <div class="info-row">
-                    <span class="info-label">Nhà cung cấp</span>
-                    <strong class="info-value">BigDataTech</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="qr-column">
-              <div class="qr-box">
-                <div class="qr-header">
-                  <h3 class="title is-5">
-                    <span class="title-icon">📱</span>
-                    Quét mã QR
-                  </h3>
-                  <p class="qr-subtitle">
-                    Sử dụng ứng dụng ngân hàng hoặc ví điện tử để quét mã
-                  </p>
-                </div>
-                <div class="qr-container">
-                  <div class="qr-frame">
-                    <figure class="image qr-image">
-                      <img :src="qrImage" alt="QR Code" />
-                    </figure>
-                    <div class="qr-scan-line"></div>
-                  </div>
-                </div>
-                <div class="qr-instructions">
-                  <div class="instruction-item">
-                    <span class="instruction-number">1</span>
-                    <span>Mở ứng dụng ngân hàng hoặc ví điện tử</span>
-                  </div>
-                  <div class="instruction-item">
-                    <span class="instruction-number">2</span>
-                    <span>Quét mã QR trên màn hình</span>
-                  </div>
-                  <div class="instruction-item">
-                    <span class="instruction-number">3</span>
-                    <span>Xác nhận thanh toán trong ứng dụng</span>
-                  </div>
-                </div>
-                <button
-                  class="button cancel-button"
-                  @click="emit('cancel')"
-                  :class="{ 'is-loading': isCancelling }"
-                  :disabled="isCancelling"
-                >
-                  Hủy thanh toán
-                </button>
-              </div>
-            </div>
-          </div>
-        </template>
+        </div>
       </section>
     </div>
   </div>
@@ -697,9 +313,12 @@ const formattedCountdown = computed(() => {
 .payment-modal .modal-card {
   width: 100%;
   max-width: 900px;
+  max-height: 92vh;
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-background {
@@ -710,12 +329,17 @@ const formattedCountdown = computed(() => {
 
 .payment-modal .modal-card-body {
   background: white;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
 }
 
 .payment-modal .modal-card-head {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 1.5rem;
+  padding: 0.75rem 1rem;
   border-bottom: none;
   display: flex;
   justify-content: space-between;
@@ -728,26 +352,6 @@ const formattedCountdown = computed(() => {
   align-items: center;
   gap: 0.75rem;
   flex: 1;
-}
-
-.back-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  border-radius: 8px;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: white;
-  transition: all 0.3s ease;
-  margin-right: 0.5rem;
-}
-
-.back-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateX(-2px);
 }
 
 .header-icon {
@@ -772,8 +376,8 @@ const formattedCountdown = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding: 1rem;
+  margin-bottom: 1.25rem;
+  padding: 0.85rem 1.25rem;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   border-radius: 12px;
 }
@@ -781,6 +385,7 @@ const formattedCountdown = computed(() => {
 .brand-left {
   display: flex;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .payment-badge {
@@ -825,7 +430,7 @@ const formattedCountdown = computed(() => {
 }
 
 .notification-box {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   border-radius: 12px;
   border: none;
   background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
@@ -834,7 +439,8 @@ const formattedCountdown = computed(() => {
 .notification-box .message-body {
   display: flex;
   gap: 1rem;
-  padding: 1rem;
+  padding: 0.4rem 1rem;
+  align-items: center;
 }
 
 .notification-icon {
@@ -848,7 +454,6 @@ const formattedCountdown = computed(() => {
 
 .notification-content strong {
   display: block;
-  margin-bottom: 0.5rem;
   color: #856404;
 }
 
@@ -1038,26 +643,29 @@ const formattedCountdown = computed(() => {
 
 .qr-payment-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  grid-template-columns: 0.95fr 1fr;
+  gap: 1.25rem;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
 }
 
 .qr-info-column {
   display: flex;
   flex-direction: column;
+  gap: 1rem;
 }
 
 .qr-info-box {
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border-radius: 16px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  height: 100%;
 }
 
 .info-header {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.85rem;
   border-bottom: 2px solid rgba(0, 0, 0, 0.05);
 }
 
@@ -1072,14 +680,14 @@ const formattedCountdown = computed(() => {
 .info-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .info-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem;
+  padding: 0.65rem 0.75rem;
   background: white;
   border-radius: 8px;
   transition: all 0.3s ease;
@@ -1107,13 +715,96 @@ const formattedCountdown = computed(() => {
 }
 
 .amount-highlight {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 700;
 }
 
 .info-value.free {
   color: #10b981;
   font-weight: 600;
+}
+
+.info-row.address-row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.info-row.address-row .info-value {
+  width: 100%;
+  color: #4a5568;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.products-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: auto;
+}
+
+.products-list.compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.product-item.compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.product-item.compact:hover {
+  background: #edf2f7;
+}
+
+.product-item.compact .product-info {
+  flex: 1;
+}
+
+.product-item.compact .product-name {
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.25rem;
+}
+
+.product-item.compact .product-remark {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.product-item.compact .product-amount {
+  font-weight: 600;
+  color: #2d3748;
+  white-space: nowrap;
+}
+
+.total-row.compact {
+  margin-top: auto;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-row.compact .total-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.total-row.compact .total-amount {
+  font-size: 1.25rem;
+  font-weight: 700;
 }
 
 .qr-column {
@@ -1124,17 +815,18 @@ const formattedCountdown = computed(() => {
 .qr-box {
   background: white;
   border-radius: 16px;
-  padding: 2rem;
+  padding: 1rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 1rem;
+  min-height: 0;
 }
 
 .qr-header {
   text-align: center;
-  margin-bottom: 1.5rem;
   width: 100%;
 }
 
@@ -1157,12 +849,12 @@ const formattedCountdown = computed(() => {
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .qr-frame {
   position: relative;
-  padding: 1.5rem;
+
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -1170,10 +862,40 @@ const formattedCountdown = computed(() => {
 }
 
 .qr-image {
-  max-width: 280px;
+  max-width: 240px;
   width: 100%;
   position: relative;
   z-index: 1;
+}
+
+.qr-placeholder {
+  width: 240px;
+  height: 240px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  color: #6b7280;
+  text-align: center;
+  padding: 1rem;
+}
+
+.loader {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid #d1d5db;
+  border-top-color: #667eea;
+  animation: spin 0.8s linear infinite;
+}
+
+.placeholder-text {
+  font-size: 0.875rem;
+  line-height: 1.4;
 }
 
 .qr-image img {
@@ -1210,19 +932,24 @@ const formattedCountdown = computed(() => {
   }
 }
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .qr-instructions {
   width: 100%;
-  margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .instruction-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem;
+  padding: 0.65rem;
   background: #f8f9fa;
   border-radius: 8px;
   font-size: 0.875rem;
@@ -1245,7 +972,7 @@ const formattedCountdown = computed(() => {
 
 .cancel-button {
   width: 100%;
-  padding: 0.875rem 1.5rem;
+  padding: 0.85rem 1.25rem;
   background: #f8f9fa;
   color: #6c757d;
   border: 1px solid #e9ecef;
@@ -1474,5 +1201,9 @@ const formattedCountdown = computed(() => {
   .method-icon {
     align-self: flex-end;
   }
+}
+
+.brand {
+  margin-right: 1.5rem;
 }
 </style>

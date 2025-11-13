@@ -30,4 +30,12 @@ defineProps({
   </div>
 </template>
 
-
+<style scoped>
+.columns.is-multiline {
+  padding: 0 32px;
+  gap: 16px;
+}
+.column .small {
+  padding: 0;
+}
+</style>

@@ -5,9 +5,9 @@ export function usePayment() {
   const router = useRouter();
 
   const newBill = ref({
-    code: "BG000000",
-    end_user_id: "BDT000000",
-    end_user_name: "Nguyễn",
+    code: "",
+    end_user_id: "",
+    end_user_name: "MPhuong",
     end_user_addr: "Hà Nội, Việt Nam",
     merchant: 3,
     customer: 3,
@@ -25,6 +25,7 @@ export function usePayment() {
       billing_year: 2025,
       status: 1,
     },
+    
   ]);
 
   const qrImage = ref(null);
@@ -142,7 +143,7 @@ export function usePayment() {
     try {
       await updateBillStatusViaApi(2);
       alert("Giao dịch đã hết hạn. Đơn hàng đã được hủy.");
-      
+
       stopPolling();
       qrImage.value = null;
       showPaymentModal.value = false;

@@ -32,8 +32,12 @@ const emit = defineEmits(["select-color", "select-size", "open-payment"]);
 <template>
   <div class="column is-half">
     <div class="box">
-      <h1 class="title is-4 mb-2">Giày New Balance 530 Natural Indigo (GS) GR530SB1</h1>
-      <p class="subtitle is-6 has-text-grey mb-3">Mã: GR530SB1-36 ⭐ 4.3 | 31 đánh giá</p>
+      <h1 class="title is-4 mb-2">
+        Giày New Balance 530 Natural Indigo (GS) GR530SB1
+      </h1>
+      <p class="subtitle is-6 has-text-grey mb-3">
+        Mã: GR530SB1-36 ⭐ 4.3 | 31 đánh giá
+      </p>
 
       <div class="mb-4">
         <strong>Màu sắc:</strong>
@@ -67,7 +71,9 @@ const emit = defineEmits(["select-color", "select-size", "open-payment"]);
 
       <div class="box has-background-light mb-4">
         <p class="title is-4 has-text-danger">2,090,000₫</p>
-        <p class="subtitle is-6 has-text-grey">Giá gốc: <s>2,790,000₫</s> (-5%)</p>
+        <p class="subtitle is-6 has-text-grey">
+          Giá gốc: <s>2,790,000₫</s> (-5%)
+        </p>
       </div>
 
       <div class="notification is-warning is-light">
@@ -85,7 +91,11 @@ const emit = defineEmits(["select-color", "select-size", "open-payment"]);
           :disabled="isCreating || isQrLoading"
         >
           {{
-            isCreating ? "Đang xử lý..." : isQrLoading ? "Đang tạo QR..." : "Thanh toán"
+            isCreating
+              ? "Đang xử lý..."
+              : isQrLoading
+              ? "Đang tạo QR..."
+              : "Thanh toán"
           }}
         </button>
       </div>
@@ -96,5 +106,9 @@ const emit = defineEmits(["select-color", "select-size", "open-payment"]);
 <style scoped>
 .button-wrapper {
   margin-top: 1.5rem;
+}
+.is-active {
+  background-color: #3149ff;
+  color: white;
 }
 </style>

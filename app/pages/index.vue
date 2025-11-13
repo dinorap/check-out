@@ -55,22 +55,9 @@ const {
   payWithQr,
 } = usePayment();
 
-function handleOpenPayment() {
+async function handleOpenPayment() {
   openPaymentModal();
-}
-
-function handlePayWithQr() {
-  payWithQr();
-}
-
-function handleSelectPaymentMethod(method) {
-  if (method === "qr") {
-    payWithQr();
-  } else {
-    // Handle other payment methods
-    console.log("Selected payment method:", method);
-    alert(`Phương thức thanh toán "${method}" đang được phát triển.`);
-  }
+  await payWithQr();
 }
 
 function handleClosePayment() {
@@ -124,24 +111,11 @@ function handleCancelPayment() {
       :new-detail-list="newDetailList"
       @close="handleClosePayment"
       @cancel="handleCancelPayment"
-      @pay-with-qr="handlePayWithQr"
-      @select-payment-method="handleSelectPaymentMethod"
     />
   </section>
 </template>
 
 <style scoped>
-.columns .is-multiline {
-  padding: 0 34px;
-  gap: 18px;
-}
-.is-active {
-  background-color: #3149ff;
-  color: white;
-}
-.column .small {
-  padding: 0;
-}
 .box {
   border-radius: 12px;
 }
