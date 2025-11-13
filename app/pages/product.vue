@@ -6,7 +6,9 @@ const router = useRouter();
 
 /* ========== PRODUCT STATE ========== */
 const baseSize = ref(31);
-const sizes = computed(() => Array.from({ length: 5 }, (_, i) => baseSize.value + i));
+const sizes = computed(() =>
+  Array.from({ length: 5 }, (_, i) => baseSize.value + i)
+);
 const selected = ref(baseSize.value);
 const activeColor = ref(null);
 
@@ -151,14 +153,17 @@ async function checkPaymentStatus(customerId) {
   if (!token.value) await getAccessToken();
 
   try {
-    const res = await $fetch("https://bankapi.bigdatatech.vn/bidv-bigdata/getbill", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token.value}`,
-        "Content-Type": "application/json",
-      },
-      body: { customer_id: customerId },
-    });
+    const res = await $fetch(
+      "https://bankapi.bigdatatech.vn/bidv-bigdata/getbill",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+          "Content-Type": "application/json",
+        },
+        body: { customer_id: customerId },
+      }
+    );
 
     console.log("📦 Kết quả getbill:", res);
 
@@ -191,14 +196,17 @@ async function createBill() {
   isCreating.value = true;
 
   try {
-    const billGroupRes = await $fetch("https://bankapi.bigdatatech.vn/data/BillGroup/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: {
-        ...newBill.value,
-        create_time: new Date().toISOString(),
-      },
-    });
+    const billGroupRes = await $fetch(
+      "https://bankapi.bigdatatech.vn/data/BillGroup/",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: {
+          ...newBill.value,
+          create_time: new Date().toISOString(),
+        },
+      }
+    );
 
     const groupBillId = billGroupRes?.id;
     if (!groupBillId) throw new Error("Không lấy được ID BillGroup");
@@ -239,7 +247,9 @@ async function handleFakePaid() {
 <template>
   <section class="section">
     <div class="container">
-      <h1 class="title is-4 mb-2">Giày New Balance 530 Natural Indigo (GS) GR530SB1</h1>
+      <h1 class="title is-4 mb-2">
+        Giày New Balance 530 Natural Indigo (GS) GR530SB1
+      </h1>
 
       <div class="columns is-variable is-8">
         <!-- LEFT -->
@@ -284,7 +294,9 @@ async function handleFakePaid() {
 
             <div class="box has-background-light mt-4">
               <p class="title is-4 has-text-danger">2,090,000₫</p>
-              <p class="subtitle is-6 has-text-grey">Giá gốc: <s>2,790,000₫</s> (-5%)</p>
+              <p class="subtitle is-6 has-text-grey">
+                Giá gốc: <s>2,790,000₫</s> (-5%)
+              </p>
             </div>
 
             <div class="columns">
@@ -320,7 +332,11 @@ async function handleFakePaid() {
           </header>
           <section class="modal-card-body has-text-centered">
             <div v-if="qrImage">
-              <img :src="qrImage" alt="QR" style="max-width: 300px; margin: auto" />
+              <img
+                :src="qrImage"
+                alt="QR"
+                style="max-width: 300px; margin: auto"
+              />
               <p class="mt-3">Đang tự kiểm tra thanh toán mỗi 3s...</p>
             </div>
             <div v-else class="has-text-grey">Không có QR. Thử tạo lại.</div>
@@ -331,7 +347,9 @@ async function handleFakePaid() {
               @click="handleFakePaid"
               :disabled="isCreating"
             >
-              {{ isCreating ? "Đang xử lý..." : "Fake thanh toán (đã trả tiền)" }}
+              {{
+                isCreating ? "Đang xử lý..." : "Fake thanh toán (đã trả tiền)"
+              }}
             </button>
             <button
               class="button"
@@ -356,10 +374,7 @@ async function handleFakePaid() {
   background-color: #3149ff;
   color: white;
 }
-.qr-modal .modal-background {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  backdrop-filter: blur(5px);
-}
+
 .qr-modal.is-active .modal-card {
   animation: fadeInUp 0.3s ease;
 }

@@ -4,7 +4,9 @@ import { usePayment } from "~/composables/usePayment";
 
 /* ========== PRODUCT STATE ========== */
 const baseSize = ref(31);
-const sizes = computed(() => Array.from({ length: 5 }, (_, i) => baseSize.value + i));
+const sizes = computed(() =>
+  Array.from({ length: 5 }, (_, i) => baseSize.value + i)
+);
 const selected = ref(baseSize.value);
 function selectSize(value) {
   selected.value = value;
@@ -39,18 +41,44 @@ function selectColor(color) {
 
 /* ========== PAYMENT LOGIC ========== */
 const {
+  newBill,
+  newDetailList,
   qrImage,
   isQrLoading,
-  showQrModal,
+  showPaymentModal,
   isCreating,
-  hasCreatedBill,
-  createBill,
-  getQRCode,
-  closeQrModal,
+  isCancelling,
+  countdown,
+  openPaymentModal,
+  closePaymentModal,
+  cancelPayment,
+  payWithQr,
 } = usePayment();
 
-function handleCloseModal() {
-  closeQrModal();
+function handleOpenPayment() {
+  openPaymentModal();
+}
+
+function handlePayWithQr() {
+  payWithQr();
+}
+
+function handleSelectPaymentMethod(method) {
+  if (method === "qr") {
+    payWithQr();
+  } else {
+    // Handle other payment methods
+    console.log("Selected payment method:", method);
+    alert(`Phương thức thanh toán "${method}" đang được phát triển.`);
+  }
+}
+
+function handleClosePayment() {
+  closePaymentModal();
+}
+
+function handleCancelPayment() {
+  cancelPayment();
 }
 </script>
 
@@ -58,7 +86,9 @@ function handleCloseModal() {
   <section class="section">
     <div class="container">
       <div class="title">
-        <h1 class="title is-4 mb-2">Giày New Balance 530 Natural Indigo (GS) GR530SB1</h1>
+        <h1 class="title is-4 mb-2">
+          Giày New Balance 530 Natural Indigo (GS) GR530SB1
+        </h1>
       </div>
 
       <div class="columns is-variable is-8">
@@ -73,11 +103,9 @@ function handleCloseModal() {
           :selected="selected"
           :is-qr-loading="isQrLoading"
           :is-creating="isCreating"
-          :has-created-bill="hasCreatedBill"
           @select-color="selectColor"
           @select-size="selectSize"
-          @create-bill="createBill"
-          @get-qr="getQRCode"
+          @open-payment="handleOpenPayment"
         />
       </div>
 
@@ -85,8 +113,20 @@ function handleCloseModal() {
       <ProductDescription />
     </div>
 
-    <!-- Modal QR -->
-    <QRCodeModal :show="showQrModal" :qr-image="qrImage" @close="handleCloseModal" />
+    <PaymentModal
+      :show="showPaymentModal"
+      :qr-image="qrImage"
+      :is-qr-loading="isQrLoading"
+      :is-creating="isCreating"
+      :is-cancelling="isCancelling"
+      :countdown="countdown"
+      :new-bill="newBill"
+      :new-detail-list="newDetailList"
+      @close="handleClosePayment"
+      @cancel="handleCancelPayment"
+      @pay-with-qr="handlePayWithQr"
+      @select-payment-method="handleSelectPaymentMethod"
+    />
   </section>
 </template>
 
@@ -106,7 +146,7 @@ function handleCloseModal() {
   border-radius: 12px;
 }
 .qr-modal .modal-background {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: rgb(255, 255, 255) !important;
   backdrop-filter: blur(5px);
 }
 .qr-modal.is-active .modal-card {

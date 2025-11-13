@@ -5,8 +5,8 @@ export function usePayment() {
   const router = useRouter();
 
   const newBill = ref({
-    code: "BG000002",
-    end_user_id: "BDTTEST002",
+    code: "BG000000",
+    end_user_id: "BDT000000",
     end_user_name: "Nguyễn",
     end_user_addr: "Hà Nội, Việt Nam",
     merchant: 3,
@@ -29,14 +29,63 @@ export function usePayment() {
 
   const qrImage = ref(null);
   const isQrLoading = ref(false);
-  const showQrModal = ref(false);
+  const showPaymentModal = ref(false);
   const isCreating = ref(false);
+  const isCancelling = ref(false);
+  const countdown = ref(900);
   const hasCreatedBill = ref(false);
   const lastBillGroup = ref(null);
   const token = ref(null);
+  const createdDetails = ref([]);
 
   let pollingTimer = null;
+  async function updateBillStatusViaApi(statusId) {
+    const billCode = lastBillGroup.value?.code || newBill.value.code;
+    if (!billCode) return;
+
+    // Lấy token nếu chưa có
+    if (!token.value) {
+      try {
+        await getAccessToken();
+      } catch (err) {
+        console.error("Không thể lấy token:", err);
+        throw err;
+      }
+    }
+
+    try {
+      await $fetch("https://bankapi.bigdatatech.vn/api/update-bill-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token.value}`,
+        },
+        body: {
+          bill_group_code: billCode,
+          status_id: statusId,
+        },
+      });
+    } catch (err) {
+      console.error("Lỗi khi gọi update-bill-status:", err);
+      throw err;
+    }
+  }
+  let countdownTimer = null;
   const POLLING_INTERVAL = 3000;
+
+  function regenerateIdentifiers() {
+    newBill.value.code = "BG" + Math.floor(100000 + Math.random() * 900000);
+    newBill.value.end_user_id = "BDT" + Math.floor(100000 + Math.random() * 900000);
+  }
+
+  function resetLocalBill(status = 1) {
+    newBill.value.status = status;
+    newDetailList.value.forEach((detail) => {
+      detail.status = status;
+    });
+  }
+
+  regenerateIdentifiers();
 
   async function getAccessToken() {
     try {
@@ -72,6 +121,49 @@ export function usePayment() {
     }
   }
 
+  function resetCountdown() {
+    countdown.value = 15 * 60;
+  }
+
+  function startCountdown() {
+    stopCountdown();
+    resetCountdown();
+
+    countdownTimer = setInterval(() => {
+      countdown.value -= 1;
+      if (countdown.value <= 0) {
+        stopCountdown();
+        handleCountdownExpired();
+      }
+    }, 1000);
+  }
+
+  async function handleCountdownExpired() {
+    try {
+      await updateBillStatusViaApi(2);
+      alert("Giao dịch đã hết hạn. Đơn hàng đã được hủy.");
+      
+      stopPolling();
+      qrImage.value = null;
+      showPaymentModal.value = false;
+      hasCreatedBill.value = false;
+      lastBillGroup.value = null;
+      createdDetails.value = [];
+      regenerateIdentifiers();
+      resetLocalBill(1);
+    } catch (err) {
+      console.error("Lỗi khi hủy đơn hàng do hết hạn:", err);
+      alert("Giao dịch đã hết hạn nhưng không thể cập nhật trạng thái. Vui lòng thử lại.");
+    }
+  }
+
+  function stopCountdown() {
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+  }
+
   async function checkPaymentStatus(customerId = newBill.value.end_user_id) {
     if (!customerId) return;
 
@@ -95,14 +187,15 @@ export function usePayment() {
       });
 
       if (res?.result_code === "012") {
-        newBill.value.status = 7;
-        newDetailList.value.forEach((detail) => {
-          detail.status = 7;
-        });
-
-        stopPolling();
-        showQrModal.value = false;
-        await router.push("/payment-success");
+        try {
+          await updateRemoteStatus(7);
+        } finally {
+          resetLocalBill(7);
+          stopPolling();
+          qrImage.value = null;
+          showPaymentModal.value = false;
+          await router.push("/payment-success");
+        }
       }
     } catch (err) {
       console.error("Lỗi khi kiểm tra bill:", err);
@@ -113,8 +206,9 @@ export function usePayment() {
   }
 
   async function createBill() {
-    if (isCreating.value) return;
+    if (isCreating.value) return false;
     isCreating.value = true;
+    createdDetails.value = [];
 
     try {
       const billGroupRes = await $fetch("https://bankapi.bigdatatech.vn/data/BillGroup/", {
@@ -142,29 +236,31 @@ export function usePayment() {
           code: billGroupRes?.code || newBill.value.code,
         };
 
-        await $fetch("https://bankapi.bigdatatech.vn/data/BillDetail/", {
+        const detailRes = await $fetch("https://bankapi.bigdatatech.vn/data/BillDetail/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: detailBody,
         });
+        if (detailRes?.id) {
+          createdDetails.value.push({
+            ...detailBody,
+            id: detailRes.id,
+          });
+        }
       }
 
       hasCreatedBill.value = true;
-      alert("Tạo bill thành công!");
+      return true;
     } catch (err) {
       console.error("Lỗi khi tạo bill:", err);
       alert("Tạo bill thất bại: " + (err?.data?.detail || err?.message));
+      return false;
     } finally {
       isCreating.value = false;
     }
   }
 
   async function getQRCode() {
-    if (!hasCreatedBill.value) {
-      alert("Vui lòng tạo bill trước khi quét QR.");
-      return;
-    }
-
     if (isQrLoading.value) return;
     isQrLoading.value = true;
 
@@ -175,7 +271,7 @@ export function usePayment() {
           serviceId: "BDT001",
           code: newBill.value.end_user_id,
           name: "Bigdata",
-          amount: newDetailList.value[0].amount
+          amount: newDetailList.value[0].amount,
         },
       };
 
@@ -187,7 +283,6 @@ export function usePayment() {
 
       if (res?.vietQRImage) {
         qrImage.value = `data:image/png;base64,${res.vietQRImage}`;
-        showQrModal.value = true;
         startPolling(newBill.value.end_user_id);
       } else {
         alert("API không trả về QR. Thử lại sau.");
@@ -199,13 +294,72 @@ export function usePayment() {
     }
   }
 
-  function closeQrModal() {
+  function openPaymentModal() {
+    resetLocalBill(1);
+    showPaymentModal.value = true;
+    qrImage.value = null;
+    resetCountdown();
+  }
+
+  function closePaymentModal() {
     stopPolling();
-    showQrModal.value = false;
+    stopCountdown();
+    showPaymentModal.value = false;
+    qrImage.value = null;
+  }
+
+  async function payWithQr() {
+    if (isCreating.value || isQrLoading.value) return;
+
+    if (!hasCreatedBill.value) {
+      const created = await createBill();
+      if (!created) return;
+    }
+
+    await getQRCode();
+    startCountdown();
+  }
+
+  async function updateRemoteStatus(status) {
+    if (!lastBillGroup.value?.id) return;
+
+    if (status === 2) {
+      try {
+        await updateBillStatusViaApi(2);
+      } catch (err) {
+        console.error("Không thể đồng bộ trạng thái qua api/update-bill-status:", err);
+      }
+    }
+  }
+
+  async function cancelPayment() {
+    if (isCancelling.value) return;
+    isCancelling.value = true;
+
+    stopPolling();
+    stopCountdown();
+
+    try {
+      await updateBillStatusViaApi(2);
+      alert("Đơn hàng đã được hủy.");
+
+      closePaymentModal();
+      hasCreatedBill.value = false;
+      lastBillGroup.value = null;
+      createdDetails.value = [];
+      regenerateIdentifiers();
+      resetLocalBill(1);
+    } catch (err) {
+      console.error("Không thể hủy thanh toán:", err);
+      alert("Hủy thanh toán thất bại. Vui lòng thử lại.");
+    } finally {
+      isCancelling.value = false;
+    }
   }
 
   onBeforeUnmount(() => {
     stopPolling();
+    stopCountdown();
   });
 
   return {
@@ -213,14 +367,19 @@ export function usePayment() {
     newDetailList,
     qrImage,
     isQrLoading,
-    showQrModal,
+    showPaymentModal,
     isCreating,
+    isCancelling,
+    countdown,
     hasCreatedBill,
     lastBillGroup,
     checkPaymentStatus,
+    openPaymentModal,
+    closePaymentModal,
+    cancelPayment,
+    payWithQr,
     createBill,
     getQRCode,
-    closeQrModal,
   };
 }
 
