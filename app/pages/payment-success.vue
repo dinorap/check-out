@@ -182,16 +182,6 @@ const orderCode = computed(() => route.query.code || "N/A");
   overflow: hidden;
 }
 
-.success-container::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-}
-
 .success-animation {
   position: relative;
   display: inline-flex;
